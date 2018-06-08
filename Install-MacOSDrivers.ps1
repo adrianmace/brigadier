@@ -61,16 +61,19 @@
     if ($7zInstalled -ne $true) { Start-Process -FilePath $env:SystemRoot\System32\msiexec.exe -ArgumentList "/x $OutputDir\$($SEVENZIP_URL.Split('/')[-1]) /qb- /norestart" -Wait }
 
     # Install Bootcamp using Task Scheduler to install as SYSTEM
-    if ($Install) { 
-	    # Add Sysinternals Acceptance
-	    New-Item -Path "HKCU:\Software\Sysinternals" -Force | Out-Null
-	    New-ItemProperty -Path "HKCU:\Software\Sysinternals" -Name "EulaAccepted" -Value "1" -PropertyType DWORD -Force | Out-Null
-	    New-Item -Path "HKCU:\.DEFAULT\Software\Sysinternals" -Force | Out-Null
-	    New-ItemProperty -Path "HKCU:\.DEFAULT\Software\Sysinternals" -Name "EulaAccepted" -Value "1" -PropertyType DWORD -Force | Out-Null
+	if ($Install) {
+		# Check for existence of psexec64
+		if(Test-Path "$PsScriptRoot\psexec64.exe") { 
+			# Add Sysinternals Acceptance
+			New-Item -Path "HKCU:\Software\Sysinternals" -Force | Out-Null
+			New-ItemProperty -Path "HKCU:\Software\Sysinternals" -Name "EulaAccepted" -Value "1" -PropertyType DWORD -Force | Out-Null
+			New-Item -Path "HKCU:\.DEFAULT\Software\Sysinternals" -Force | Out-Null
+			New-ItemProperty -Path "HKCU:\.DEFAULT\Software\Sysinternals" -Name "EulaAccepted" -Value "1" -PropertyType DWORD -Force | Out-Null
 
-	    # Install Bootcamp	
-        Start-Process -FilePath $PsScriptRoot\psexec64.exe -ArgumentList "-i -s $env:SystemRoot\System32\msiexec.exe /i $OutputDir\Bootcamp\Drivers\Apple\BootCamp.msi NOCHECK=1 /qn /norestart" -Wait 
-    } else { exit 2000 }
+			# Install Bootcamp
+			Start-Process -FilePath $PsScriptRoot\psexec64.exe -ArgumentList "-i -s $env:SystemRoot\System32\msiexec.exe /i $OutputDir\Bootcamp\Drivers\Apple\BootCamp.msi NOCHECK=1 /qn /norestart" -Wait 
+		} else { Write-Warning "Please ensure psexec64.exe is included alongside this script"; exit 2000 }
+	} else { exit 3000 }
 }
 
 Install-MacOSDrivers -Install
